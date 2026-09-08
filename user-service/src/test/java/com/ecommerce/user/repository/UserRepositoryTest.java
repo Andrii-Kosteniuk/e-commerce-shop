@@ -6,8 +6,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,6 +24,15 @@ class UserRepositoryTest {
     private UserRepository userRepository;
 
     private User testUser;
+
+    @TestConfiguration
+    static class TestCacheConfiguration {
+
+        @Bean
+        CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager();
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -41,7 +54,7 @@ class UserRepositoryTest {
     @Test
     void shouldFindSavedUserByEmail() {
         // ARRANGE
-        User savedUser = userRepository.findById(testUser.getId()).orElse(null);
+        User savedUser = userRepository.findByEmail(testUser.getEmail()).orElse(null);
 
         // ACT
         // ASSERT

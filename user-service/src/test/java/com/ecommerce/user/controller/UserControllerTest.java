@@ -9,14 +9,19 @@ import com.ecommerce.user.service.UserRepositoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,11 +42,20 @@ class UserControllerTest {
     @MockitoBean
     UserRepositoryService userRepositoryService;
     @MockitoBean
-    TokenBlocklistService  tokenBlocklistService;
+    TokenBlocklistService tokenBlocklistService;
     @MockitoBean
     JwtService jwtService;
     @MockitoBean
     InternalAuthenticationFilter internalAuthenticationFilter;
+
+    @TestConfiguration
+    static class TestCacheConfiguration {
+
+        @Bean
+        CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager();
+        }
+    }
 
     @Test
     void shouldReturnAuthenticationResponseIfUserIsRegistered() throws Exception {
@@ -114,6 +128,35 @@ class UserControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(userAuthenticationService).logout(request);
+    }
+
+    @Test
+    void shouldRetrieveUserByEmailSuccessfully() throws Exception {
+
+        // ARRANGE
+        String email = "andrii@gmail.com";
+
+        // ACT
+        mockMvc.perform(get(BASE_URL + "/email")
+                        .queryParam("email", email))
+                .andExpect(status().isOk());
+
+        // ASSERT
+        verify(userRepositoryService).getUserByEmail(email);
+    }
+
+    @Test
+    void shouldRetrieveUserByIdSuccessfully() throws Exception {
+
+        // ARRANGE
+        long id = 1L;
+
+        // ACT
+        mockMvc.perform(get(BASE_URL + "/" + id))
+                .andExpect(status().isOk());
+
+        // ASSERT
+        verify(userRepositoryService).getUserById(id);
     }
 
 
