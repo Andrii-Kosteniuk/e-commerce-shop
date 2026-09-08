@@ -12,7 +12,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"SECURITY_INTERNAL_API_KEY=some-key",})
+        properties = {"SECURITY_INTERNAL_API_KEY=some-key"})
 class TestApiGatewayRouter {
 
     @Autowired
