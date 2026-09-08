@@ -1,15 +1,14 @@
 package com.ecommerce.user.config;
 
-import com.ecommerce.commondto.user.UserResponse;
+import com.ecommerce.user.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -20,20 +19,26 @@ import java.time.Duration;
 public class RedisCacheConfig {
 
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    public RedisCacheConfiguration cacheConfiguration() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        Jackson2JsonRedisSerializer<UserResponse> userSerializer =
-                new Jackson2JsonRedisSerializer<>(mapper, UserResponse.class);
+        JacksonJsonRedisSerializer<User> orderSerializer =
+                new JacksonJsonRedisSerializer<>(User.class);
 
-        RedisCacheConfiguration usersConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(1))
                 .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(userSerializer));
-
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(usersConfig)
-                .build();
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                new StringRedisSerializer()
+                        )
+                )
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                orderSerializer
+                        )
+                );
     }
 }
