@@ -5,10 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -18,10 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@ExtendWith(SpringExtension.class)
-@TestPropertySource(properties = {
-        "spring.cloud.config.enabled=false",
-        "security.internal-api-key=some-internal-api-key"})
+@ExtendWith(MockitoExtension.class)
 class TokenBlocklistServiceTest {
 
     private static final String PREFIX = "blocklist";
@@ -30,15 +26,18 @@ class TokenBlocklistServiceTest {
     RedisTemplate<String, String> redisTemplate;
 
     @Mock
-    private ValueOperations<String, String> valueOperations;
+    ValueOperations<String, String> valueOperations;
 
     @InjectMocks
     TokenBlocklistService tokenBlocklistService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(tokenBlocklistService, "blocklistPrefix", null);
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        ReflectionTestUtils.setField(
+                tokenBlocklistService,
+                "blocklistPrefix",
+                PREFIX
+        );
     }
 
     @Test
@@ -47,16 +46,20 @@ class TokenBlocklistServiceTest {
         when(redisTemplate.hasKey(PREFIX + ":token123")).thenReturn(true);
 
         // ACT
+        boolean revoked = tokenBlocklistService.isRevoked("token123");
+
         // ASSERT
-        assertTrue(tokenBlocklistService.isRevoked("token123"));
+        assertTrue(revoked);
         verify(redisTemplate).hasKey(PREFIX + ":token123");
     }
 
     @Test
-    void shouldDoRevokeTokenDirectly() {
+    void shouldRevokeTokenDirectly() {
         // ARRANGE
         String tokenId = "token123";
         long expiry = 5000L;
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         // ACT
         tokenBlocklistService.revoke(tokenId, expiry);
