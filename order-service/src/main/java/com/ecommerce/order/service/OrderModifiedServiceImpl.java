@@ -1,4 +1,4 @@
-package com.ecommerce.order.service.impl;
+package com.ecommerce.order.service;
 
 import com.ecommerce.commondto.kafka.OrderCanceledEvent;
 import com.ecommerce.commondto.kafka.OrderCreatedEvent;
@@ -63,7 +63,6 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
                 .totalPrice(total)
                 .status(OrderStatus.NEW)
                 .orderCreateDate(LocalDateTime.now(ZoneId.systemDefault()))
-                .orderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()))
                 .build();
 
         items.forEach(item -> item.setOrder(order));

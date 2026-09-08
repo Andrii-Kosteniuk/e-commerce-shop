@@ -1,4 +1,4 @@
-package com.ecommerce.order.service.impl;
+package com.ecommerce.order.service;
 
 import com.ecommerce.commondto.order.OrderResponse;
 import com.ecommerce.order.mapper.OrderMapper;
