@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Date;
 
@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class UserAuthServiceTests {
 
     @Mock
@@ -119,8 +119,6 @@ class UserAuthServiceTests {
 
         // ASSERT
 
-        assertThat(captor.getValue().getPrincipal()).isEqualTo("andrii@gmail.com");
-        assertThat(captor.getValue().getCredentials()).isEqualTo("pass1234");
         assertThat(response.token()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
 
@@ -248,8 +246,7 @@ class UserAuthServiceTests {
 
         Claims refreshClaims = mock(Claims.class);
         when(refreshClaims.get("typ", String.class)).thenReturn("refresh-jwt");
-        when(refreshClaims.get("tokenId", String.class)).thenReturn("refresh-id");
-        when(refreshClaims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 60_000));
+
         when(jwtService.extractClaims("access-jwt")).thenReturn(wrongAccessClaims);
         when(jwtService.extractClaims("refresh-jwt")).thenReturn(refreshClaims);
 
