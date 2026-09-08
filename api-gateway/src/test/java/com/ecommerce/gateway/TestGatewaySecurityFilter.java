@@ -2,23 +2,31 @@ package com.ecommerce.gateway;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "SECURITY_INTERNAL_API_KEY=some-key",
+                "eureka.client.register-with-eureka=false",
+                "eureka.client.fetch-registry=false"
+        }
+)
 class TestGatewaySecurityFilter {
 
-    @Autowired
-    WebTestClient client;
+    @LocalServerPort
+    int port;
+
+    private WebTestClient client;
 
     static WireMockServer wireMockServer;
 
@@ -36,8 +44,13 @@ class TestGatewaySecurityFilter {
     @Test
     void shouldRouteToAuthService() {
 
+        client = WebTestClient
+                .bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
         wireMockServer.stubFor(
-                WireMock.get("/api/v1/auth/login")
+                get("/api/v1/auth/login")
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -48,7 +61,7 @@ class TestGatewaySecurityFilter {
         client.get()
                 .uri("/api/v1/auth/login")
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus()
+                .isOk();
     }
-
 }
