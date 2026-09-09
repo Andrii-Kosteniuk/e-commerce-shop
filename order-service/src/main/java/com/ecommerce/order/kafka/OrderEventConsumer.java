@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class OrderEventConsumer {
                         String.format("Order with id '%d' not found", event.orderId())));
 
         orderModifiedService.updateOrderStatus(order, OrderStatus.PAID);
+        order.setOrderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()));
         orderRepository.save(order);
 
         log.info("Order {} marked as paid", event.orderId());

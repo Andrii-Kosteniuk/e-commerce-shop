@@ -18,11 +18,8 @@ import com.ecommerce.order.model.Order;
 import com.ecommerce.order.model.OrderItem;
 import com.ecommerce.order.model.OrderStatus;
 import com.ecommerce.order.repository.OrderRepository;
-import com.ecommerce.order.service.OrderCatalogService;
-import com.ecommerce.order.service.OrderModifiedService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,13 +94,13 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "orders", key = "#orderId")
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("Order with id '%d' not found", orderId)));
 
         updateOrderStatus(order, OrderStatus.CANCELLED);
+        order.setOrderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()));
         orderRepository.save(order);
 
         var items = order.getItems()
@@ -142,6 +139,7 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
         log.info("Order with ID {} was found", orderId);
 
         updateOrderStatus(orderById, OrderStatus.CONFIRMED);
+        orderById.setOrderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()));
 
         kafkaEventPublisher.publish(
                 KafkaTopics.PAYMENT_CREATE,
