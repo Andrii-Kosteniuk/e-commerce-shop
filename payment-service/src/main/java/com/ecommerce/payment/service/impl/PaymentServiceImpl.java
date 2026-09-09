@@ -57,8 +57,6 @@ public class PaymentServiceImpl implements PaymentService {
 
             log.info("Payment created successfully for orderId={}, userId={}",
                     request.orderId(), request.userId());
-
-        paymentMapper.toPaymentResponse(payment);
     }
 
     @Override
