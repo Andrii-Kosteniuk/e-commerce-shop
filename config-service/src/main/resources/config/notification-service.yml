@@ -51,4 +51,4 @@ eureka:
     lease-expiration-duration-in-seconds: 15
 
 security:
-  internal-api-key: ${INTERNAL_API_KEY}
+  internal-api-key: ${SECURITY_INTERNAL_API_KEY}
