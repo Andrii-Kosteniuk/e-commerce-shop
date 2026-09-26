@@ -36,8 +36,8 @@ spring:
 
 notification:
   from-email: noreply@-e-commerce-shop.com
-  confirmation-base-url: ${EUREKA_URI:http://api-gateway:9091}
-  confirmation-order-url: api/v1/orders/confirm-order/
+  confirmation-base-url: http://localhost:9091/
+  confirmation-order-url: api/v1/orders/confirmation/
 
 eureka:
   client:
