@@ -28,7 +28,7 @@ public class OrderController {
         return ResponseEntity.ok(catalogService.getAllOrders());
     }
 
-    @PostMapping("/confirm-order/{orderId}")
+    @PostMapping("/confirmation/{orderId}")
     public ResponseEntity<OrderResponse> confirmOrder(
             @PathVariable Long orderId,
             @RequestHeader("X-User-Id") Long userId) {
@@ -36,7 +36,7 @@ public class OrderController {
         return ResponseEntity.ok(modifiedService.confirmOrder(orderId, userId));
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderCreateRequest request, @RequestHeader("X-User-Id") Long userId) {
 
         var order = modifiedService.createOrder(request, userId);
