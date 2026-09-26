@@ -1,16 +1,19 @@
 package com.ecommerce.notification.kafka;
 
-import com.ecommerce.kafka.utils.KafkaTopics;
 import com.ecommerce.commondto.kafka.OrderCanceledEvent;
 import com.ecommerce.commondto.kafka.OrderCreatedEvent;
 import com.ecommerce.commondto.kafka.PaymentFailedEvent;
 import com.ecommerce.commondto.kafka.PaymentSucceededEvent;
+import com.ecommerce.kafka.utils.KafkaTopics;
 import com.ecommerce.notification.mail.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -29,12 +32,18 @@ public class NotificationEventConsumer {
     public void handleOrderCreated(OrderCreatedEvent event) {
         log.info("Sending 'ORDER_CREATED' notification to userId: {}", event.userId());
 
+        UUID id = UUID.randomUUID();
+
+        String uri = UriComponentsBuilder
+                .fromUriString(confirmationUrl + confirmOrderUrl + "{id}")
+                .buildAndExpand(id)
+                .toUriString();
 
         notificationService.notifyOrderCreated(
                 event.userEmail(),
                 event.orderId(),
                 event.totalPrice().toString(),
-                event.response().items(), confirmationUrl + confirmOrderUrl + event.orderId()
+                event.response().items(), uri
 
         );
     }
