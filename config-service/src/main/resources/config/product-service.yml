@@ -33,6 +33,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.ecommerce.commondto.kafka"
+        spring.json.add.type.headers: true
   data:
     redis:
       host: ${REDIS_HOST:redis}
