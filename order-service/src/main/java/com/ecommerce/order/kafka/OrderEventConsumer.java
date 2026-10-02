@@ -1,9 +1,10 @@
 package com.ecommerce.order.kafka;
 
-import com.ecommerce.commonexception.exception.ResourceNotFoundException;
-import com.ecommerce.kafka.utils.KafkaTopics;
 import com.ecommerce.commondto.kafka.PaymentFailedEvent;
 import com.ecommerce.commondto.kafka.PaymentSucceededEvent;
+import com.ecommerce.commondto.kafka.StockReservationFailedEvent;
+import com.ecommerce.commonexception.exception.ResourceNotFoundException;
+import com.ecommerce.kafka.utils.KafkaTopics;
 import com.ecommerce.order.model.Order;
 import com.ecommerce.order.model.OrderStatus;
 import com.ecommerce.order.repository.OrderRepository;
@@ -48,13 +49,27 @@ public class OrderEventConsumer {
     }
 
 
-        @KafkaListener(
+    @KafkaListener(
             topics = KafkaTopics.PAYMENT_FAILED,
             groupId = "order-group"
     )
     public void handlePaymentFailed(PaymentFailedEvent event) {
         log.info("Payment failed for orderId: {}, reason: {}", event.orderId(), event.reason());
-        orderModifiedService.cancelOrder(event.orderId());
+        orderModifiedService.cancelOrder(
+                event.orderId(),
+                "Payment failed for orderId %d".formatted(event.orderId()),
+                false);
+    }
+
+    @KafkaListener(
+            topics = KafkaTopics.STOCK_RESERVATION_FAILED,
+            groupId = "order-group"
+    )
+    public void handleStockReservationFailed(StockReservationFailedEvent event) {
+        log.warn("Stock reservation failed for orderId: {}, reason: {}", event.orderId(), event.reason());
+        orderModifiedService.cancelOrder(event.orderId(),
+                "Stock reservation failed for orderId %d".formatted(event.orderId()),
+                false);
     }
 
 }
