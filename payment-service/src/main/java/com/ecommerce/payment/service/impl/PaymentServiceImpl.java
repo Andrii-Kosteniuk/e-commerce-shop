@@ -8,18 +8,16 @@ import com.ecommerce.commonexception.exception.ResourceNotFoundException;
 import com.ecommerce.commonexception.exception.StripePaymentException;
 import com.ecommerce.kafka.producers.PaymentEventPublisher;
 import com.ecommerce.payment.mapper.PaymentMapper;
-import com.ecommerce.payment.stripe.StripeGateway;
 import com.ecommerce.payment.model.Payment;
 import com.ecommerce.payment.model.PaymentStatus;
 import com.ecommerce.payment.repository.PaymentRepository;
 import com.ecommerce.payment.service.PaymentService;
+import com.ecommerce.payment.stripe.StripeGateway;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,37 +34,34 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void createPayment(PaymentRequest request, Long userId) {
-        Optional<Payment> paymentByIdempotencyKey = paymentRepository.findByIdempotencyKey(request.idempotencyKey());
 
-            if (paymentByIdempotencyKey.isPresent()) {
-                log.debug("Payment with idempotency key '{}' already exists.", request.idempotencyKey());
-                paymentMapper.toPaymentResponse(paymentByIdempotencyKey.get());
-                return;
-            }
+        if (paymentRepository.findByIdempotencyKey(request.idempotencyKey()).isPresent()) {
+            log.info("Duplicate payment request ignored, idempotencyKey={}", request.idempotencyKey());
+            return;
+        }
 
-            Payment payment = Payment.builder()
-                    .userId(request.userId())
-                    .orderId(request.orderId())
-                    .amount(request.amount())
-                    .currency(request.currency())
-                    .idempotencyKey(UUID.randomUUID().toString())
-                    .status(PaymentStatus.PENDING)
-                    .build();
+        Payment payment = Payment.builder()
+                .userId(request.userId())
+                .orderId(request.orderId())
+                .amount(request.amount())
+                .currency(request.currency())
+                .idempotencyKey(request.idempotencyKey())
+                .status(PaymentStatus.PENDING)
+                .build();
 
-            paymentRepository.save(payment);
+        paymentRepository.saveAndFlush(payment);
 
-            log.info("Payment created successfully for orderId={}, userId={}",
-                    request.orderId(), request.userId());
+        log.info("Payment created for orderId={}, userId={}", request.orderId(), request.userId());
     }
 
     @Override
     @Transactional
-    public PaymentResponse  confirmPayment(Long paymentId, Long userId) {
+    public PaymentResponse confirmPayment(Long paymentId, Long userId) {
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
 
-        if (!payment.getUserId().equals(userId)){
+        if (!payment.getUserId().equals(userId)) {
             throw new AccessDeniedException("You have no permission to confirm this payment");
         }
 
@@ -106,7 +101,7 @@ public class PaymentServiceImpl implements PaymentService {
                             payment.getOrderId(),
                             payment.getUserId(),
                             e.getMessage()
-            ));
+                    ));
         }
 
         return paymentMapper.toPaymentResponse(payment);
