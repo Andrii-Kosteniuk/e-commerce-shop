@@ -434,7 +434,7 @@ class OrderModifiedServiceImplTest {
         // When
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
-                () -> orderService.cancelOrder(orderId)
+                () -> orderService.cancelOrder(orderId, "Order with id '10' not found", false )
         );
 
         // Then
@@ -450,68 +450,41 @@ class OrderModifiedServiceImplTest {
     }
 
     @Test
-    void cancelOrder_shouldCancelOrderAndPublishEvent() {
-        // Given
-        Long orderId = 10L;
-
+    void cancelOrder_whenStockWasNeverReserved_publishesEventWithNoItemsToRelease() {
+        Long orderId = 11L;
         Order order = createOrder(OrderStatus.NEW);
         order.setId(orderId);
         order.setUserId(1L);
+        OrderItem item = OrderItem.builder().productId(100L).quantity(2).price(BigDecimal.TEN).build();
+        item.setOrder(order);
+        order.setItems(List.of(item));
 
-        OrderItem firstItem = OrderItem.builder()
-                .productId(100L)
-                .quantity(2)
-                .price(BigDecimal.valueOf(100))
-                .build();
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
-        OrderItem secondItem = OrderItem.builder()
-                .productId(200L)
-                .quantity(3)
-                .price(BigDecimal.valueOf(50))
-                .build();
+        orderService.cancelOrder(orderId, "Insufficient stock: product 100", false);
 
-        firstItem.setOrder(order);
-        secondItem.setOrder(order);
+        assertEquals(OrderStatus.CANCELLED, order.getStatus());
 
-        order.setItems(List.of(firstItem, secondItem));
-
-        when(orderRepository.findById(orderId))
-                .thenReturn(Optional.of(order));
-
-        // When
-        orderService.cancelOrder(orderId);
-
-        // Then
-        assertEquals(
-                OrderStatus.CANCELLED,
-                order.getStatus()
-        );
-
-        verify(orderRepository).save(order);
-
-        ArgumentCaptor<OrderCanceledEvent> eventCaptor =
-                ArgumentCaptor.forClass(OrderCanceledEvent.class);
-
-        verify(kafkaEventPublisher).publish(
-                eq(KafkaTopics.ORDER_CANCELED),
-                eq("10"),
-                eventCaptor.capture()
-        );
-
-        OrderCanceledEvent event = eventCaptor.getValue();
-
-        assertEquals(orderId, event.orderId());
-        assertEquals(1L, event.userId());
-        assertEquals("Order has been canceled", event.reason());
-
-        assertEquals(
-                List.of(
-                        new StockItem(100L, 2),
-                        new StockItem(200L, 3)
-                ),
-                event.items()
-        );
+        ArgumentCaptor<OrderCanceledEvent> captor = ArgumentCaptor.forClass(OrderCanceledEvent.class);
+        verify(kafkaEventPublisher).publish(eq(KafkaTopics.ORDER_CANCELED), eq("11"), captor.capture());
+        assertTrue(captor.getValue().items().isEmpty());
+        assertEquals("Insufficient stock: product 100", captor.getValue().reason());
     }
+
+    @Test
+    void cancelOrder_whenAlreadyCancelled_isIdempotentAndPublishesNothing() {
+        Long orderId = 12L;
+        Order order = createOrder(OrderStatus.CANCELLED);
+        order.setId(orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        orderService.cancelOrder(orderId, "duplicate delivery", false);
+
+        verify(orderRepository, never()).save(any());
+        verify(kafkaEventPublisher, never()).publish(anyString(), anyString(), any());
+    }
+
 
     @Test
     void confirmOrder_shouldThrowExceptionWhenOrderDoesNotExist() {
