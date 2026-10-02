@@ -51,4 +51,10 @@ public class KafkaTopicConfig {
                 .partitions(3).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic stockReservationFailedTopic() {
+                return TopicBuilder.name(KafkaTopics.STOCK_RESERVATION_FAILED)
+                              .partitions(3).replicas(1).build();
+            }
+
 }
