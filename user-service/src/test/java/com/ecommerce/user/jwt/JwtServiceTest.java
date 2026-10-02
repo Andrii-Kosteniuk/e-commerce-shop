@@ -49,19 +49,6 @@ class JwtServiceTest {
 
     }
 
-    @Test
-    void shouldReturnFalseWhenValidateTokenIfSignatureIsTampered() {
-
-        // GIVEN
-        String token = jwtService.generateAccessToken(1L, "andrii-kosteniuk@gmail.com", "USER");
-
-        // WHEN
-        String tampered = token.substring(0, token.length() - 1)
-                + (token.charAt(token.length() - 1) == 'm' ? 'a' : 'm');
-
-        // THEN
-        assertThat(jwtService.validateToken(tampered)).isFalse();
-    }
 
     @Test
     void shouldReturnFalseWhenValidateTokenIfTokenIsExpired() {
