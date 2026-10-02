@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Component
@@ -33,8 +34,7 @@ public class PaymentEventConsumer {
                             event.userId(),
                             event.amount(),
                             Currency.USD.name(),
-                            UUID.nameUUIDFromBytes((event.orderId() + ":" + event.userId()).getBytes()).toString()
-
+                            idempotencyKeyFor(event)
                     ), event.userId()
             );
 
@@ -44,4 +44,11 @@ public class PaymentEventConsumer {
             throw new KafkaEventException("Failed to confirm order", e);
         }
     }
+
+    public static String idempotencyKeyFor(PaymentCreateEvent event) {
+        return UUID.nameUUIDFromBytes(
+                ("payment:" + event.orderId() + ":" + event.userId()).getBytes(StandardCharsets.UTF_8)
+        ).toString();
+    }
+
 }
