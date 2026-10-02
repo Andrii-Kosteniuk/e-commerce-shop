@@ -94,33 +94,31 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
 
     @Override
     @Transactional
-    public void cancelOrder(Long orderId) {
+    public void cancelOrder(Long orderId, String reason, boolean releaseStock) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("Order with id '%d' not found", orderId)));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            log.info("Order {} already cancelled, ignoring duplicate cancel request", orderId);
+            return;
+        }
 
         updateOrderStatus(order, OrderStatus.CANCELLED);
         order.setOrderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()));
         orderRepository.save(order);
 
-        var items = order.getItems()
-                .stream()
-                .map(item -> new StockItem(item.getProductId(), item.getQuantity()))
-                .toList();
-
+        List<StockItem> items = releaseStock
+                ? order.getItems().stream()
+                  .map(item -> new StockItem(item.getProductId(), item.getQuantity())).toList()
+                : List.of();
 
         kafkaEventPublisher.publish(
                 KafkaTopics.ORDER_CANCELED,
                 orderId.toString(),
-                new OrderCanceledEvent(
-                        orderId,
-                        order.getUserId(),
-                        "Order has been canceled",
-                        items));
+                new OrderCanceledEvent(orderId, order.getUserId(), reason, items));
 
         log.info("Order {} cancelled", orderId);
-
-        orderMapper.toOrderResponse(order);
     }
 
 
