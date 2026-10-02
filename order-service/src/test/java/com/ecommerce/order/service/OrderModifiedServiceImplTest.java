@@ -128,7 +128,7 @@ class OrderModifiedServiceImplTest {
 
         assertSame(savedOrder, item.getOrder());
 
-        verify(kafkaEventPublisher).publish(
+        verify(kafkaEventPublisher).publishAndAwait(
                 eq(KafkaTopics.ORDER_CREATED),
                 eq("50"),
                 any(OrderCreatedEvent.class)
@@ -229,7 +229,7 @@ class OrderModifiedServiceImplTest {
 
         verify(orderRepository, never()).save(any());
         verify(kafkaEventPublisher, never())
-                .publish(anyString(), anyString(), any());
+                .publishAndAwait(anyString(), anyString(), any());
         verify(orderMapper, never())
                 .toOrderResponse(any(Order.class));
     }
@@ -446,7 +446,7 @@ class OrderModifiedServiceImplTest {
         verify(orderRepository, never()).save(any());
 
         verify(kafkaEventPublisher, never())
-                .publish(anyString(), anyString(), any());
+                .publishAndAwait(anyString(), anyString(), any());
     }
 
     @Test
@@ -466,7 +466,7 @@ class OrderModifiedServiceImplTest {
         assertEquals(OrderStatus.CANCELLED, order.getStatus());
 
         ArgumentCaptor<OrderCanceledEvent> captor = ArgumentCaptor.forClass(OrderCanceledEvent.class);
-        verify(kafkaEventPublisher).publish(eq(KafkaTopics.ORDER_CANCELED), eq("11"), captor.capture());
+        verify(kafkaEventPublisher).publishAndAwait(eq(KafkaTopics.ORDER_CANCELED), eq("11"), captor.capture());
         assertTrue(captor.getValue().items().isEmpty());
         assertEquals("Insufficient stock: product 100", captor.getValue().reason());
     }
@@ -482,7 +482,7 @@ class OrderModifiedServiceImplTest {
         orderService.cancelOrder(orderId, "duplicate delivery", false);
 
         verify(orderRepository, never()).save(any());
-        verify(kafkaEventPublisher, never()).publish(anyString(), anyString(), any());
+        verify(kafkaEventPublisher, never()).publishAndAwait(anyString(), anyString(), any());
     }
 
 
@@ -510,7 +510,7 @@ class OrderModifiedServiceImplTest {
         verify(orderRepository, never()).save(any());
 
         verify(kafkaEventPublisher, never())
-                .publish(anyString(), anyString(), any());
+                .publishAndAwait(anyString(), anyString(), any());
     }
 
     @Test
@@ -547,7 +547,7 @@ class OrderModifiedServiceImplTest {
         verify(orderRepository, never()).save(any());
 
         verify(kafkaEventPublisher, never())
-                .publish(anyString(), anyString(), any());
+                .publishAndAwait(anyString(), anyString(), any());
     }
 
     @Test
@@ -588,7 +588,7 @@ class OrderModifiedServiceImplTest {
         ArgumentCaptor<PaymentCreateEvent> eventCaptor =
                 ArgumentCaptor.forClass(PaymentCreateEvent.class);
 
-        verify(kafkaEventPublisher).publish(
+        verify(kafkaEventPublisher).publishAndAwait(
                 eq(KafkaTopics.PAYMENT_CREATE),
                 eq("10"),
                 eventCaptor.capture()
@@ -629,7 +629,7 @@ class OrderModifiedServiceImplTest {
         verify(orderRepository, never()).save(any());
 
         verify(kafkaEventPublisher, never())
-                .publish(anyString(), anyString(), any());
+                .publishAndAwait(anyString(), anyString(), any());
     }
 
     private Order createOrder(OrderStatus status) {

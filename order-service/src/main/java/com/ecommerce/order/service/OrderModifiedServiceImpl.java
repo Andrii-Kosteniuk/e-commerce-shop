@@ -65,7 +65,7 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
         items.forEach(item -> item.setOrder(order));
         orderRepository.save(order);
 
-        kafkaEventPublisher.publish(
+        kafkaEventPublisher.publishAndAwait(
                 KafkaTopics.ORDER_CREATED,
                 order.getId().toString(),
                 new OrderCreatedEvent(
@@ -113,7 +113,7 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
                   .map(item -> new StockItem(item.getProductId(), item.getQuantity())).toList()
                 : List.of();
 
-        kafkaEventPublisher.publish(
+        kafkaEventPublisher.publishAndAwait(
                 KafkaTopics.ORDER_CANCELED,
                 orderId.toString(),
                 new OrderCanceledEvent(orderId, order.getUserId(), reason, items));
@@ -139,7 +139,7 @@ public class OrderModifiedServiceImpl implements OrderModifiedService {
         updateOrderStatus(orderById, OrderStatus.CONFIRMED);
         orderById.setOrderUpdateDate(LocalDateTime.now(ZoneId.systemDefault()));
 
-        kafkaEventPublisher.publish(
+        kafkaEventPublisher.publishAndAwait(
                 KafkaTopics.PAYMENT_CREATE,
                 orderId.toString(), new PaymentCreateEvent(orderId, userId, orderById.getTotalPrice())
         );

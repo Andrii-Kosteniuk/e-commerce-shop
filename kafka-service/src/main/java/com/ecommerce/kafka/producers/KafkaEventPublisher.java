@@ -18,7 +18,7 @@ public class KafkaEventPublisher {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void publish(String topic, String id, Object event) {
+    public void publishAndAwait(String topic, String id, Object event) {
 
         log.info("Publishing {} event for ID {}", event.getClass().getSimpleName(), id);
 

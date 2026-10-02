@@ -58,7 +58,7 @@ public class OrderEventConsumer {
         orderModifiedService.cancelOrder(
                 event.orderId(),
                 "Payment failed for orderId %d".formatted(event.orderId()),
-                false);
+                true);
     }
 
     @KafkaListener(
