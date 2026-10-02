@@ -9,10 +9,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payments", indexes ={
-        @Index(name = "idx_payment_order_id", columnList = "order_id"),
-        @Index(name = "idx_payment_idempotency_key", columnList = "idempotency_key", unique = true)
-})
+@Table(name = "payments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_payment_order_id", columnNames = "order_id"),
+                @UniqueConstraint(name = "uk_payment_idempotency_key", columnNames = "idempotency_key")
+        })
 @Getter
 @Setter
 @Builder
